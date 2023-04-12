@@ -21,7 +21,7 @@ from warnings import warn
     Module variables
 """
 _cdl_dir = os.path.dirname(lib.__file__)
-_cdl_dir = "/".join((('.' if not _cdl_dir else _cdl_dir), "cdl/"))
+_cdl_dir = "/".join((("." if not _cdl_dir else _cdl_dir), "cdl/"))
 _format = "NETCDF4_CLASSIC"
 
 
@@ -37,8 +37,9 @@ def __number_or_string(val):
     return val
 
 
-def ncgen(filename, dims=None, vars=None, attr=None, title=None,
-          clobber=False, format=_format):
+def ncgen(
+    filename, dims=None, vars=None, attr=None, title=None, clobber=False, format=_format
+):
     """
     Create a new netcdf file with the given definitions. Need to define
     the dimensions, the variables, and the attributes.
@@ -103,16 +104,17 @@ def ncgen(filename, dims=None, vars=None, attr=None, title=None,
             _nc.setncattr(a, attr[a])
 
         try:
-            _nc.author = os.getenv('USER') or \
-                os.getenv('LOGNAME') or \
-                os.getenv('USERNAME') or \
-                os.getlogin() or \
-                'nobody'
+            _nc.author = (
+                os.getenv("USER")
+                or os.getenv("LOGNAME")
+                or os.getenv("USERNAME")
+                or os.getlogin()
+                or "nobody"
+            )
         except (AttributeError, IOError, OSError, FileNotFoundError) as e:
-            _nc.author = 'nobody'
+            _nc.author = "nobody"
 
-        _nc.history = datetime.now().strftime(
-            "Created on %a, %B %d, %Y at %H:%M")
+        _nc.history = datetime.now().strftime("Created on %a, %B %d, %Y at %H:%M")
         if title is not None:
             _nc.title = title
         _nc.close()
@@ -124,7 +126,7 @@ def ncgen(filename, dims=None, vars=None, attr=None, title=None,
 
 def _set_grid_dimensions(dims, eta_rho, xi_rho, s_rho):
     """
-        internal method: Set grid dimensions
+    internal method: Set grid dimensions
     """
     if "xi_rho" in dims.keys():
         dims["xi_rho"] = xi_rho
@@ -152,7 +154,7 @@ def _set_grid_dimensions(dims, eta_rho, xi_rho, s_rho):
 
 def _set_time_ref(vars, timevar, reftime, cycle=None):
     """
-        internal method: Set time reference
+    internal method: Set time reference
     """
     if isinstance(timevar, str):
         timevar = [timevar]
@@ -160,12 +162,10 @@ def _set_time_ref(vars, timevar, reftime, cycle=None):
         for nvar in vars:
             if nvar["name"] == tvar:
                 if "units" in nvar["attr"]:
-                    t = re.findall('(\w+) since .*', nvar["attr"]["units"])
-                    nvar["attr"]["units"] = \
-                        "{:s} since {:s}".format(t[0], str(reftime))
+                    t = re.findall("(\w+) since .*", nvar["attr"]["units"])
+                    nvar["attr"]["units"] = "{:s} since {:s}".format(t[0], str(reftime))
                 else:
-                    nvar["attr"]["units"] = \
-                        "days since {:s}".format(str(reftime))
+                    nvar["attr"]["units"] = "days since {:s}".format(str(reftime))
                 if cycle is not None:
                     nvar["attr"]["cycle_length"] = cycle
     return vars
@@ -207,7 +207,7 @@ def add_variable(nc, var):
     # Handle the dimensions by enforcing a tuple list rather
     # than a list of strings, then add whatever we have
     try:
-        dims = var['dims'].replace(" ", "").split(',')
+        dims = var["dims"].replace(" ", "").split(",")
     except:
         dims = var['dims']
     try:
@@ -226,10 +226,11 @@ def add_variable(nc, var):
     return nc
 
 
-def _create_generic_file(filename, cdl, eta_rho, xi_rho, s_rho,
-                         reftime=None, clobber=False, title="ROMS"):
+def _create_generic_file(
+    filename, cdl, eta_rho, xi_rho, s_rho, reftime=None, clobber=False, title="ROMS"
+):
     """
-        internal method: Generic file creator that uses ocean_time
+    internal method: Generic file creator that uses ocean_time
     """
     # Generate the Structure
     dims, vars, attr = cdl_parser(cdl)
@@ -240,15 +241,21 @@ def _create_generic_file(filename, cdl, eta_rho, xi_rho, s_rho,
         vars = _set_time_ref(vars, "ocean_time", reftime)
 
     # Create the file
-    _nc = ncgen(filename, dims=dims, vars=vars, attr=attr, clobber=clobber,
-                title=title)
+    _nc = ncgen(filename, dims=dims, vars=vars, attr=attr, clobber=clobber, title=title)
 
     # Return the new file
     return _nc
 
 
-def create_psource(filename, nriver=1, s_rho=5,
-                   reftime=default_epoch, clobber=False, cdl=None, title="My River"):
+def create_psource(
+    filename,
+    nriver=1,
+    s_rho=5,
+    reftime=default_epoch,
+    clobber=False,
+    cdl=None,
+    title="My River",
+):
     """
     Create a new, blank point source file
 
@@ -277,8 +284,7 @@ def create_psource(filename, nriver=1, s_rho=5,
 
     """
     # Generate the Structure
-    dims, vars, attr = cdl_parser(
-        _cdl_dir + "frc_rivers.cdl" if cdl is None else cdl)
+    dims, vars, attr = cdl_parser(_cdl_dir + "frc_rivers.cdl" if cdl is None else cdl)
 
     # Fill in the appropriate river values
     dims["river"] = nriver
@@ -286,15 +292,15 @@ def create_psource(filename, nriver=1, s_rho=5,
     vars = _set_time_ref(vars, "river_time", reftime)
 
     # Create the river file
-    _nc = ncgen(filename, dims=dims, vars=vars, attr=attr, clobber=clobber,
-                title=title)
+    _nc = ncgen(filename, dims=dims, vars=vars, attr=attr, clobber=clobber, title=title)
 
     # Return the new file
     return _nc
 
 
-def create_grid(filename, eta_rho=10, xi_rho=10, s_rho=1, clobber=False,
-                cdl=None, title="My Grid"):
+def create_grid(
+    filename, eta_rho=10, xi_rho=10, s_rho=1, clobber=False, cdl=None, title="My Grid"
+):
     """
     Create a new, blank grid file
 
@@ -324,22 +330,28 @@ def create_grid(filename, eta_rho=10, xi_rho=10, s_rho=1, clobber=False,
 
     """
     # Generate the Structure
-    dims, vars, attr = cdl_parser(
-        _cdl_dir + "roms_grid.cdl" if cdl is None else cdl)
+    dims, vars, attr = cdl_parser(_cdl_dir + "roms_grid.cdl" if cdl is None else cdl)
 
     # Fill in the appropriate dimension values
     dims = _set_grid_dimensions(dims, eta_rho, xi_rho, s_rho)
 
     # Create the grid file
-    _nc = ncgen(filename, dims=dims, vars=vars, attr=attr, clobber=clobber,
-                title=title)
+    _nc = ncgen(filename, dims=dims, vars=vars, attr=attr, clobber=clobber, title=title)
 
     # Return the new file
     return _nc
 
 
-def create_adsen(filename, eta_rho=10, xi_rho=10, s_rho=1,
-                 reftime=default_epoch, clobber=False, cdl=None, title="My Adsen"):
+def create_adsen(
+    filename,
+    eta_rho=10,
+    xi_rho=10,
+    s_rho=1,
+    reftime=default_epoch,
+    clobber=False,
+    cdl=None,
+    title="My Adsen",
+):
     """
     Create a new adjoint sensitivity file
 
@@ -367,12 +379,28 @@ def create_adsen(filename, eta_rho=10, xi_rho=10, s_rho=1,
 
     """
     # Create the general file
-    return _create_generic_file(filename, _cdl_dir + "adsen.cdl" if cdl is None else cdl,
-                                eta_rho, xi_rho, s_rho, reftime, clobber, title)
+    return _create_generic_file(
+        filename,
+        _cdl_dir + "adsen.cdl" if cdl is None else cdl,
+        eta_rho,
+        xi_rho,
+        s_rho,
+        reftime,
+        clobber,
+        title,
+    )
 
 
-def create_bry(filename, eta_rho=10, xi_rho=10, s_rho=1,
-               reftime=default_epoch, clobber=False, cdl=None, title="My BRY"):
+def create_bry(
+    filename,
+    eta_rho=10,
+    xi_rho=10,
+    s_rho=1,
+    reftime=default_epoch,
+    clobber=False,
+    cdl=None,
+    title="My BRY",
+):
     """
     Create a bry forcing file
 
@@ -403,23 +431,29 @@ def create_bry(filename, eta_rho=10, xi_rho=10, s_rho=1,
 
     """
     # Generate the Structure
-    dims, vars, attr = cdl_parser(
-        _cdl_dir + "bry_unlimit.cdl" if cdl is None else cdl)
+    dims, vars, attr = cdl_parser(_cdl_dir + "bry_unlimit.cdl" if cdl is None else cdl)
 
     # Fill in the appropriate dimension values
     dims = _set_grid_dimensions(dims, eta_rho, xi_rho, s_rho)
     vars = _set_time_ref(vars, "bry_time", reftime)
 
     # Create the file
-    _nc = ncgen(filename, dims=dims, vars=vars, attr=attr, clobber=clobber,
-                title=title)
+    _nc = ncgen(filename, dims=dims, vars=vars, attr=attr, clobber=clobber, title=title)
 
     # Return the new file
     return _nc
 
 
-def create_clim(filename, eta_rho=10, xi_rho=10, s_rho=1,
-                reftime=default_epoch, clobber=False, cdl=None, title="My CLIM"):
+def create_clim(
+    filename,
+    eta_rho=10,
+    xi_rho=10,
+    s_rho=1,
+    reftime=default_epoch,
+    clobber=False,
+    cdl=None,
+    title="My CLIM",
+):
     """
     Create a climatology forcing file
 
@@ -450,24 +484,28 @@ def create_clim(filename, eta_rho=10, xi_rho=10, s_rho=1,
 
     """
     # Generate the Structure
-    dims, vars, attr = cdl_parser(
-        _cdl_dir + "clm_ts.cdl" if cdl is None else cdl)
+    dims, vars, attr = cdl_parser(_cdl_dir + "clm_ts.cdl" if cdl is None else cdl)
 
     # Fill in the appropriate dimension values
     dims = _set_grid_dimensions(dims, eta_rho, xi_rho, s_rho)
     vars = _set_time_ref(vars, "clim_time", reftime)
 
     # Create the file
-    _nc = ncgen(filename, dims=dims, vars=vars, attr=attr, clobber=clobber,
-                title=title)
+    _nc = ncgen(filename, dims=dims, vars=vars, attr=attr, clobber=clobber, title=title)
 
     # Return the new file
     return _nc
 
 
-def create_frc_bulk(filename, lat=10, lon=10,
-                    reftime=default_epoch, clobber=False, cdl=None,
-                    title="My Forcing"):
+def create_frc_bulk(
+    filename,
+    lat=10,
+    lon=10,
+    reftime=default_epoch,
+    clobber=False,
+    cdl=None,
+    title="My Forcing",
+):
     """
     Create a bulk flux forcing file
 
@@ -496,8 +534,7 @@ def create_frc_bulk(filename, lat=10, lon=10,
 
     """
     # Generate the Structure
-    dims, vars, attr = cdl_parser(
-        _cdl_dir + "frc_bulk.cdl" if cdl is None else cdl)
+    dims, vars, attr = cdl_parser(_cdl_dir + "frc_bulk.cdl" if cdl is None else cdl)
 
     # Fill in the appropriate dimension values
     dims["lat"] = lat
@@ -505,16 +542,21 @@ def create_frc_bulk(filename, lat=10, lon=10,
     vars = _set_time_ref(vars, "frc_time", reftime)
 
     # Create the file
-    _nc = ncgen(filename, dims=dims, vars=vars, attr=attr, clobber=clobber,
-                title=title)
+    _nc = ncgen(filename, dims=dims, vars=vars, attr=attr, clobber=clobber, title=title)
 
     # Return the new file
     return _nc
 
 
-def create_frc_direct(filename, eta_rho=10, xi_rho=10,
-                      reftime=default_epoch, clobber=False, cdl=None,
-                      title="My Forcing"):
+def create_frc_direct(
+    filename,
+    eta_rho=10,
+    xi_rho=10,
+    reftime=default_epoch,
+    clobber=False,
+    cdl=None,
+    title="My Forcing",
+):
     """
     Create a direct surface forcing file
 
@@ -543,30 +585,38 @@ def create_frc_direct(filename, eta_rho=10, xi_rho=10,
 
     """
     # Generate the Structure
-    dims, vars, attr = cdl_parser(
-        _cdl_dir + "frc_direct.cdl" if cdl is None else cdl)
+    dims, vars, attr = cdl_parser(_cdl_dir + "frc_direct.cdl" if cdl is None else cdl)
 
     # Fill in the appropriate dimension values
-    dims = {'y_rho': eta_rho,
-            'y_u': eta_rho,
-            'y_v': eta_rho - 1,
-            'x_rho': xi_rho,
-            'x_u': xi_rho - 1,
-            'x_v': xi_rho,
-            'frc_time': 0}
-    vars = _set_time_ref(vars, 'frc_time', reftime)
+    dims = {
+        "y_rho": eta_rho,
+        "y_u": eta_rho,
+        "y_v": eta_rho - 1,
+        "x_rho": xi_rho,
+        "x_u": xi_rho - 1,
+        "x_v": xi_rho,
+        "frc_time": 0,
+    }
+    vars = _set_time_ref(vars, "frc_time", reftime)
 
     # Create the file
-    _nc = ncgen(filename, dims=dims, vars=vars, attr=attr, clobber=clobber,
-                title=title)
+    _nc = ncgen(filename, dims=dims, vars=vars, attr=attr, clobber=clobber, title=title)
 
     # Return the new file
     return _nc
 
 
-def create_frc_flux(filename, eta_rho=10, xi_rho=10, ntimes=1,
-                    cycle=None, reftime=default_epoch, clobber=False,
-                    cdl=None, title="My Flux"):
+def create_frc_flux(
+    filename,
+    eta_rho=10,
+    xi_rho=10,
+    ntimes=1,
+    cycle=None,
+    reftime=default_epoch,
+    clobber=False,
+    cdl=None,
+    title="My Flux",
+):
     """
     Create a surface flux forcing file
 
@@ -602,8 +652,7 @@ def create_frc_flux(filename, eta_rho=10, xi_rho=10, ntimes=1,
 
     """
     # Generate the Structure
-    dims, vars, attr = cdl_parser(
-        _cdl_dir + "frc_fluxclm.cdl" if cdl is None else cdl)
+    dims, vars, attr = cdl_parser(_cdl_dir + "frc_fluxclm.cdl" if cdl is None else cdl)
 
     # Fill in the appropriate dimension values
     dims = _set_grid_dimensions(dims, eta_rho, xi_rho, 1)
@@ -613,16 +662,23 @@ def create_frc_flux(filename, eta_rho=10, xi_rho=10, ntimes=1,
     vars = _set_time_ref(vars, times, reftime)
 
     # Create the file
-    _nc = ncgen(filename, dims=dims, vars=vars, attr=attr, clobber=clobber,
-                title=title)
+    _nc = ncgen(filename, dims=dims, vars=vars, attr=attr, clobber=clobber, title=title)
 
     # Return the new file
     return _nc
 
 
-def create_frc_srelax(filename, eta_rho=10, xi_rho=10, s_rho=1, cycle=None,
-                      reftime=default_epoch, clobber=False, cdl=None,
-                      title="My Srelaxation"):
+def create_frc_srelax(
+    filename,
+    eta_rho=10,
+    xi_rho=10,
+    s_rho=1,
+    cycle=None,
+    reftime=default_epoch,
+    clobber=False,
+    cdl=None,
+    title="My Srelaxation",
+):
     """
     Create a Salt Relaxation forcing file
 
@@ -655,16 +711,14 @@ def create_frc_srelax(filename, eta_rho=10, xi_rho=10, s_rho=1, cycle=None,
 
     """
     # Generate the Structure
-    dims, vars, attr = cdl_parser(
-        _cdl_dir + "frc_srelax.cdl" if cdl is None else cdl)
+    dims, vars, attr = cdl_parser(_cdl_dir + "frc_srelax.cdl" if cdl is None else cdl)
 
     # Fill in the appropriate dimension values
     dims = _set_grid_dimensions(dims, eta_rho, xi_rho, s_rho)
     vars = _set_time_ref(vars, "sss_time", reftime, cycle)
 
     # Create the file
-    _nc = ncgen(filename, dims=dims, vars=vars, attr=attr, clobber=clobber,
-                title=title)
+    _nc = ncgen(filename, dims=dims, vars=vars, attr=attr, clobber=clobber, title=title)
 
     # Return the new file
     return _nc
@@ -703,8 +757,7 @@ def create_frc_qcorr(filename, lat=10, lon=10, cycle=None,
 
     """
     # Generate the Structure
-    dims, vars, attr = cdl_parser(
-        _cdl_dir + "frc_qcorr.cdl" if cdl is None else cdl)
+    dims, vars, attr = cdl_parser(_cdl_dir + "frc_qcorr.cdl" if cdl is None else cdl)
 
     # Fill in the appropriate dimension values
     dims['lat'] = lat
@@ -712,16 +765,23 @@ def create_frc_qcorr(filename, lat=10, lon=10, cycle=None,
     vars = _set_time_ref(vars, "sst_time", reftime, cycle)
 
     # Create the file
-    _nc = ncgen(filename, dims=dims, vars=vars, attr=attr, clobber=clobber,
-                title=title)
+    _nc = ncgen(filename, dims=dims, vars=vars, attr=attr, clobber=clobber, title=title)
 
     # Return the new file
     return _nc
 
 
-def create_frc_wind(filename, eta_rho=10, xi_rho=10, s_rho=1, cycle=None,
-                    reftime=default_epoch, clobber=False, cdl=None,
-                    title="My Winds"):
+def create_frc_wind(
+    filename,
+    eta_rho=10,
+    xi_rho=10,
+    s_rho=1,
+    cycle=None,
+    reftime=default_epoch,
+    clobber=False,
+    cdl=None,
+    title="My Winds",
+):
     """
     Create a surface wind stress forcing file
 
@@ -755,22 +815,29 @@ def create_frc_wind(filename, eta_rho=10, xi_rho=10, s_rho=1, cycle=None,
     """
     # Generate the Structure
     dims, vars, attr = cdl_parser(
-        _cdl_dir + "frc_windstress.cdl" if cdl is None else cdl)
+        _cdl_dir + "frc_windstress.cdl" if cdl is None else cdl
+    )
 
     # Fill in the appropriate dimension values
     dims = _set_grid_dimensions(dims, eta_rho, xi_rho, s_rho)
     vars = _set_time_ref(vars, "sms_time", reftime, cycle)
 
     # Create the file
-    _nc = ncgen(filename, dims=dims, vars=vars, attr=attr, clobber=clobber,
-                title=title)
+    _nc = ncgen(filename, dims=dims, vars=vars, attr=attr, clobber=clobber, title=title)
 
     # Return the new file
     return _nc
 
 
-def create_frc_wave(filename, eta_rho=10, xi_rho=10, reftime=default_epoch,
-                    clobber=False, cdl=None, title="My Waves"):
+def create_frc_wave(
+    filename,
+    eta_rho=10,
+    xi_rho=10,
+    reftime=default_epoch,
+    clobber=False,
+    cdl=None,
+    title="My Waves",
+):
     """
     Create a surface wave forcing file
 
@@ -799,24 +866,29 @@ def create_frc_wave(filename, eta_rho=10, xi_rho=10, reftime=default_epoch,
 
     """
     # Generate the Structure
-    dims, vars, attr = cdl_parser(
-        _cdl_dir + "frc_wave.cdl" if cdl is None else cdl)
+    dims, vars, attr = cdl_parser(_cdl_dir + "frc_wave.cdl" if cdl is None else cdl)
 
     # Fill in the appropriate dimension values
     dims = _set_grid_dimensions(dims, eta_rho, xi_rho, s_rho=1)
     vars = _set_time_ref(vars, "wave_time", reftime)
 
     # Create the file
-    _nc = ncgen(filename, dims=dims, vars=vars, attr=attr, clobber=clobber,
-                title=title)
+    _nc = ncgen(filename, dims=dims, vars=vars, attr=attr, clobber=clobber, title=title)
 
     # Return the new file
     return _nc
 
 
-def create_tide(filename, eta_rho=10, xi_rho=10, s_rho=1, ntides=1,
-                reftime=default_epoch, clobber=False,
-                title="My Tides"):
+def create_tide(
+    filename,
+    eta_rho=10,
+    xi_rho=10,
+    s_rho=1,
+    ntides=1,
+    reftime=default_epoch,
+    clobber=False,
+    title="My Tides",
+):
     """
     Create a barotropic tide forcing file
 
@@ -853,15 +925,22 @@ def create_tide(filename, eta_rho=10, xi_rho=10, s_rho=1, ntides=1,
     dims["tide_period"] = ntides
 
     # Create the file
-    _nc = ncgen(filename, dims=dims, vars=vars, attr=attr, clobber=clobber,
-                title=title)
+    _nc = ncgen(filename, dims=dims, vars=vars, attr=attr, clobber=clobber, title=title)
 
     # Return the new file
     return _nc
 
 
-def create_ini(filename, eta_rho=10, xi_rho=10, s_rho=1,
-               reftime=default_epoch, clobber=False, cdl=None, title="My Ini"):
+def create_ini(
+    filename,
+    eta_rho=10,
+    xi_rho=10,
+    s_rho=1,
+    reftime=default_epoch,
+    clobber=False,
+    cdl=None,
+    title="My Ini",
+):
     """
     Create an initial condition file
 
@@ -892,23 +971,28 @@ def create_ini(filename, eta_rho=10, xi_rho=10, s_rho=1,
 
     """
     # Generate the Structure
-    dims, vars, attr = cdl_parser(
-        _cdl_dir + "ini_hydro.cdl" if cdl is None else cdl)
+    dims, vars, attr = cdl_parser(_cdl_dir + "ini_hydro.cdl" if cdl is None else cdl)
 
     # Fill in the appropriate dimension values
     dims = _set_grid_dimensions(dims, eta_rho, xi_rho, s_rho)
     vars = _set_time_ref(vars, "ocean_time", reftime)
 
     # Create the file
-    _nc = ncgen(filename, dims=dims, vars=vars, attr=attr, clobber=clobber,
-                title=title)
+    _nc = ncgen(filename, dims=dims, vars=vars, attr=attr, clobber=clobber, title=title)
 
     # Return the new file
     return _nc
 
 
-def create_nudge_coef(filename, eta_rho=10, xi_rho=10, s_rho=1, clobber=False,
-                      cdl=None, title="My Nudging"):
+def create_nudge_coef(
+    filename,
+    eta_rho=10,
+    xi_rho=10,
+    s_rho=1,
+    clobber=False,
+    cdl=None,
+    title="My Nudging",
+):
     """
     Create a nudging coefficients file
 
@@ -937,22 +1021,27 @@ def create_nudge_coef(filename, eta_rho=10, xi_rho=10, s_rho=1, clobber=False,
 
     """
     # Generate the Structure
-    dims, vars, attr = cdl_parser(
-        _cdl_dir + "nudge_coef.cdl" if cdl is None else cdl)
+    dims, vars, attr = cdl_parser(_cdl_dir + "nudge_coef.cdl" if cdl is None else cdl)
 
     # Fill in the appropriate dimension values
     dims = _set_grid_dimensions(dims, eta_rho, xi_rho, s_rho)
 
     # Create the file
-    _nc = ncgen(filename, dims=dims, vars=vars, attr=attr, clobber=clobber,
-                title=title)
+    _nc = ncgen(filename, dims=dims, vars=vars, attr=attr, clobber=clobber, title=title)
 
     # Return the new file
     return _nc
 
 
-def create_da_obs(filename, state_variable=20, survey=1, provenance=None,
-                  clobber=False, cdl=None, title="My Observations"):
+def create_da_obs(
+    filename,
+    state_variable=20,
+    survey=1,
+    provenance=None,
+    clobber=False,
+    cdl=None,
+    title="My Observations",
+):
     """
     Create an assimilation observations file
 
@@ -985,8 +1074,7 @@ def create_da_obs(filename, state_variable=20, survey=1, provenance=None,
     """
 
     # Generate the Structure
-    dims, vars, attr = cdl_parser(
-        _cdl_dir + "s4dvar_obs.cdl" if cdl is None else cdl)
+    dims, vars, attr = cdl_parser(_cdl_dir + "s4dvar_obs.cdl" if cdl is None else cdl)
 
     # Fill in the appropriate dimension values
     dims["survey"] = survey
@@ -997,16 +1085,29 @@ def create_da_obs(filename, state_variable=20, survey=1, provenance=None,
         attr["obs_provenance"] = str(provenance)
 
     # Create the file
-    _nc = ncgen(filename, dims=dims, vars=vars, attr=attr, clobber=clobber,
-                title=title, format="NETCDF3_64BIT")
+    _nc = ncgen(
+        filename,
+        dims=dims,
+        vars=vars,
+        attr=attr,
+        clobber=clobber,
+        title=title,
+        format="NETCDF3_64BIT",
+    )
 
     # Return the new file
     return _nc
 
 
-def create_da_ray_obs(filename, ray_datum=1, provenance="None",
-                      reftime=default_epoch, clobber=False,
-                      cdl=None, title="My Observations"):
+def create_da_ray_obs(
+    filename,
+    ray_datum=1,
+    provenance="None",
+    reftime=default_epoch,
+    clobber=False,
+    cdl=None,
+    title="My Observations",
+):
     """
     Create an acoustic ray assimilation observations file
 
@@ -1037,7 +1138,8 @@ def create_da_ray_obs(filename, ray_datum=1, provenance="None",
 
     # Generate the Structure
     dims, vars, attr = cdl_parser(
-        _cdl_dir + "s4dvar_obs_ray.cdl" if cdl is None else cdl)
+        _cdl_dir + "s4dvar_obs_ray.cdl" if cdl is None else cdl
+    )
 
     # Fill in the appropriate dimension values
     dims["ray_datum"] = ray_datum
@@ -1047,16 +1149,23 @@ def create_da_ray_obs(filename, ray_datum=1, provenance="None",
     attr["obs_provenance"] = provenance
 
     # Create the file
-    _nc = ncgen(filename, dims=dims, vars=vars, attr=attr, clobber=clobber,
-                title=title)
+    _nc = ncgen(filename, dims=dims, vars=vars, attr=attr, clobber=clobber, title=title)
 
     # Return the new file
     return _nc
 
 
-def create_da_bry_std(filename, eta_rho=10, xi_rho=10, s_rho=1, bry=4,
-                      reftime=default_epoch, clobber=False, cdl=None,
-                      title="My BRY STD"):
+def create_da_bry_std(
+    filename,
+    eta_rho=10,
+    xi_rho=10,
+    s_rho=1,
+    bry=4,
+    reftime=default_epoch,
+    clobber=False,
+    cdl=None,
+    title="My BRY STD",
+):
     """
     Create a boundaries standard deviation file
 
@@ -1089,8 +1198,7 @@ def create_da_bry_std(filename, eta_rho=10, xi_rho=10, s_rho=1, bry=4,
 
     """
     # Generate the Structure
-    dims, vars, attr = cdl_parser(
-        _cdl_dir + "s4dvar_std_b.cdl" if cdl is None else cdl)
+    dims, vars, attr = cdl_parser(_cdl_dir + "s4dvar_std_b.cdl" if cdl is None else cdl)
 
     # Fill in the appropriate dimension values
     dims = _set_grid_dimensions(dims, eta_rho, xi_rho, s_rho)
@@ -1099,16 +1207,22 @@ def create_da_bry_std(filename, eta_rho=10, xi_rho=10, s_rho=1, bry=4,
     vars = _set_time_ref(vars, "ocean_time", reftime)
 
     # Create the file
-    _nc = ncgen(filename, dims=dims, vars=vars, attr=attr, clobber=clobber,
-                title=title)
+    _nc = ncgen(filename, dims=dims, vars=vars, attr=attr, clobber=clobber, title=title)
 
     # Return the new file
     return _nc
 
 
-def create_da_frc_std(filename, eta_rho=10, xi_rho=10, s_rho=1,
-                      reftime=default_epoch, clobber=False,
-                      cdl=None, title="My FRC STD"):
+def create_da_frc_std(
+    filename,
+    eta_rho=10,
+    xi_rho=10,
+    s_rho=1,
+    reftime=default_epoch,
+    clobber=False,
+    cdl=None,
+    title="My FRC STD",
+):
     """
     Create a forcing standard deviation file
 
@@ -1139,24 +1253,29 @@ def create_da_frc_std(filename, eta_rho=10, xi_rho=10, s_rho=1,
 
     """
     # Generate the Structure
-    dims, vars, attr = cdl_parser(
-        _cdl_dir + "s4dvar_std_f.cdl" if cdl is None else cdl)
+    dims, vars, attr = cdl_parser(_cdl_dir + "s4dvar_std_f.cdl" if cdl is None else cdl)
 
     # Fill in the appropriate dimension values
     dims = _set_grid_dimensions(dims, eta_rho, xi_rho, s_rho)
     vars = _set_time_ref(vars, "ocean_time", reftime)
 
     # Create the file
-    _nc = ncgen(filename, dims=dims, vars=vars, attr=attr, clobber=clobber,
-                title=title)
+    _nc = ncgen(filename, dims=dims, vars=vars, attr=attr, clobber=clobber, title=title)
 
     # Return the new file
     return _nc
 
 
-def create_da_ini_std(filename, eta_rho=10, xi_rho=10, s_rho=1,
-                      reftime=default_epoch, clobber=False,
-                      cdl=None, title="My INI STD"):
+def create_da_ini_std(
+    filename,
+    eta_rho=10,
+    xi_rho=10,
+    s_rho=1,
+    reftime=default_epoch,
+    clobber=False,
+    cdl=None,
+    title="My INI STD",
+):
     """
     Create an initialization standard deviation file
 
@@ -1187,24 +1306,29 @@ def create_da_ini_std(filename, eta_rho=10, xi_rho=10, s_rho=1,
 
     """
     # Generate the Structure
-    dims, vars, attr = cdl_parser(
-        _cdl_dir + "s4dvar_std_i.cdl" if cdl is None else cdl)
+    dims, vars, attr = cdl_parser(_cdl_dir + "s4dvar_std_i.cdl" if cdl is None else cdl)
 
     # Fill in the appropriate dimension values
     dims = _set_grid_dimensions(dims, eta_rho, xi_rho, s_rho)
     vars = _set_time_ref(vars, "ocean_time", reftime)
 
     # Create the file
-    _nc = ncgen(filename, dims=dims, vars=vars, attr=attr, clobber=clobber,
-                title=title)
+    _nc = ncgen(filename, dims=dims, vars=vars, attr=attr, clobber=clobber, title=title)
 
     # Return the new file
     return _nc
 
 
-def create_da_model_std(filename, eta_rho=10, xi_rho=10, s_rho=1,
-                        reftime=default_epoch, clobber=False,
-                        cdl=None, title="My Model STD"):
+def create_da_model_std(
+    filename,
+    eta_rho=10,
+    xi_rho=10,
+    s_rho=1,
+    reftime=default_epoch,
+    clobber=False,
+    cdl=None,
+    title="My Model STD",
+):
     """
     Create an time varying model standard deviation file
 
@@ -1235,24 +1359,29 @@ def create_da_model_std(filename, eta_rho=10, xi_rho=10, s_rho=1,
 
     """
     # Generate the Structure
-    dims, vars, attr = cdl_parser(
-        _cdl_dir + "s4dvar_std_m.cdl" if cdl is None else cdl)
+    dims, vars, attr = cdl_parser(_cdl_dir + "s4dvar_std_m.cdl" if cdl is None else cdl)
 
     # Fill in the appropriate dimension values
     dims = _set_grid_dimensions(dims, eta_rho, xi_rho, s_rho)
     vars = _set_time_ref(vars, "ocean_time", reftime)
 
     # Create the file
-    _nc = ncgen(filename, dims=dims, vars=vars, attr=attr, clobber=clobber,
-                title=title)
+    _nc = ncgen(filename, dims=dims, vars=vars, attr=attr, clobber=clobber, title=title)
 
     # Return the new file
     return _nc
 
 
-def create_zlevel_grid(filename, lat=10, lon=10, depth=1,
-                       clobber=False, cdl=None,
-                       title="Zlevel Grid", dims=2):
+def create_zlevel_grid(
+    filename,
+    lat=10,
+    lon=10,
+    depth=1,
+    clobber=False,
+    cdl=None,
+    title="Zlevel Grid",
+    dims=2,
+):
     """
     Create z-level grid file
 
@@ -1299,17 +1428,23 @@ def create_zlevel_grid(filename, lat=10, lon=10, depth=1,
     dims["depth"] = depth
 
     # Create the file
-    _nc = ncgen(filename, dims=dims, vars=vars, attr=attr, clobber=clobber,
-                title=title)
+    _nc = ncgen(filename, dims=dims, vars=vars, attr=attr, clobber=clobber, title=title)
 
     # Return the new file
     return _nc
 
 
-def create_zlevel(filename, lat=10, lon=10, depth=1,
-                  reftime=default_epoch,
-                  clobber=False, cdl=None,
-                  title="Zlevel Model Data", dims=2):
+def create_zlevel(
+    filename,
+    lat=10,
+    lon=10,
+    depth=1,
+    reftime=default_epoch,
+    clobber=False,
+    cdl=None,
+    title="Zlevel Model Data",
+    dims=2,
+):
     """
     Create an time varying model standard deviation file
 
@@ -1359,8 +1494,7 @@ def create_zlevel(filename, lat=10, lon=10, depth=1,
     vars = _set_time_ref(vars, "time", reftime)
 
     # Create the file
-    _nc = ncgen(filename, dims=dims, vars=vars, attr=attr, clobber=clobber,
-                title=title)
+    _nc = ncgen(filename, dims=dims, vars=vars, attr=attr, clobber=clobber, title=title)
 
     # Return the new file
     return _nc
