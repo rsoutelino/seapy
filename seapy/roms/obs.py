@@ -1,27 +1,26 @@
 #!/usr/bin/env python
 """
-  obs.py
+obs.py
 
-  State Estimation and Analysis for PYthon
+State Estimation and Analysis for PYthon
 
-  Module to handle the observation structure within ROMS. The ROMS structure
-  defines the obs_provenance, which is a numeric ID for tracking the source
-  of the observations you use. This module defines a dictionary to translate
-  between the numeric and string representations so that either can be used.
-  Standard instruments are predefined; however, for your own applications,
-  you will want to define additional provenances for the observations you use.
-  This is accomplished via:
+Module to handle the observation structure within ROMS. The ROMS structure
+defines the obs_provenance, which is a numeric ID for tracking the source
+of the observations you use. This module defines a dictionary to translate
+between the numeric and string representations so that either can be used.
+Standard instruments are predefined; however, for your own applications,
+you will want to define additional provenances for the observations you use.
+This is accomplished via:
 
-  >>> import seapy
-  >>> seapy.roms.obs.obs_provenance.update({353:'MY_OBS1', 488:'MY_OBS2'})
+>>> import seapy
+>>> seapy.roms.obs.obs_provenance.update({353:'MY_OBS1', 488:'MY_OBS2'})
 
-  You can make your own module for importing seapy and adding your definitions
-  easily.
+You can make your own module for importing seapy and adding your definitions
+easily.
 
-  Written by Brian Powell on 08/05/14
-  Copyright (c)2010--2023 University of Hawaii under the MIT-License.
+Written by Brian Powell on 08/05/14
+Copyright (c)2010--2023 University of Hawaii under the MIT-License.
 """
-
 
 import numpy as np
 import netCDF4
@@ -596,19 +595,7 @@ class obs:
         nc.variables["Nobs"][:] = self.nobs
         nc.variables["survey_time"][:] = self.survey_time
         nc.variables["obs_variance"][:] = np.ones(state_vars) * 0.1
-        if self.reftime:
-            setattr(
-                nc.variables["obs_time"],
-                "units",
-                "days since " + self.reftime.strftime("%Y-%m-%d %H:%M:%S") + " GMT",
-            )
-            setattr(
-                nc.variables["survey_time"],
-                "units",
-                "days since " + self.reftime.strftime("%Y-%m-%d %H:%M:%S") + " GMT",
-            )
-        else:
-            nc.variables["obs_time"][:] = self.time[self.sort]
+        nc.variables["obs_time"][:] = self.time[self.sort]
         nc.variables["obs_Xgrid"][:] = self.x[self.sort]
         nc.variables["obs_Ygrid"][:] = self.y[self.sort]
         nc.variables["obs_Zgrid"][:] = self.z[self.sort]
@@ -869,7 +856,9 @@ def gridder(
     )
 
 
-def merge_files(obs_files, out_files, days, dt, reftime=None, limits=None, clobber=True):
+def merge_files(
+    obs_files, out_files, days, dt, reftime=None, limits=None, clobber=True
+):
     """
     merge together a group of observation files into combined new files
     with observations that lie only within the corresponding dates
@@ -989,7 +978,7 @@ def merge_files(obs_files, out_files, days, dt, reftime=None, limits=None, clobb
         # Make time relative to the assimilation window
         if reftime:
             nobs.reftime = reftime
-        
+
         # Save out the new observations
         nobs.to_netcdf(outfile, dt=dt)
 
