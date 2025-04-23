@@ -682,7 +682,6 @@ class ostia_sst_map(obsgen):
         obs = seapy.roms.obs.gridder(
             self.grid, time, lon, lat, None, data, self.dt, title
         )
-        obs.reftime = self.reftime
         obs.depth = obs.depth - 2  # put SST info bellow the surface
         return obs
 
