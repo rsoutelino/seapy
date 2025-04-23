@@ -1994,7 +1994,6 @@ class mangopare(obsgen):
         last_layer_obs = np.where(obs.z < 1.5)
         if last_layer_obs:
             obs.delete(last_layer_obs)
-        obs.reftime = self.reftime
         return obs
 
 
