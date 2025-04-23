@@ -1960,9 +1960,6 @@ class mangopare(obsgen):
         depth[temp.mask] = np.ma.masked
         # time[temp.mask] = np.ma.masked
 
-        # import ipdb
-        # ipdb.set_trace()
-
         # Search for good data by QC codes
         good_data = np.where(
             (temp_qc.compressed() == 1)
@@ -1991,6 +1988,9 @@ class mangopare(obsgen):
         obs = seapy.roms.obs.gridder(
             self.grid, time, lon, lat, np.round(depth), data, self.dt, title
         )
+        if not obs:
+            return None
+
         last_layer_obs = np.where(obs.z < 1.5)
         if last_layer_obs:
             obs.delete(last_layer_obs)
