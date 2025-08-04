@@ -402,7 +402,7 @@ class grid:
                 self._nc = seapy.netcdf(self.filename)
 
             # Try to load a field from the file
-            for f in ["temp", "temperature", "water_temp", "fed"]:
+            for f in ["temp", "temperature", "water_temp", "fed", "thetao"]:
                 if f in self._nc.variables:
                     fld = self._nc.variables[f][0, :, :, :]
                     fld = np.ma.array(fld, mask=np.isnan(fld))
