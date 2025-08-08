@@ -5,7 +5,7 @@
   Methods to assist in the analysis of ROMS fields
 
   Written by Brian Powell on 05/24/15
-  Copyright (c)2010--2023 University of Hawaii under the MIT-License.
+  Copyright (c)2010--2025 University of Hawaii under the MIT-License.
 """
 
 import numpy as np
@@ -43,17 +43,17 @@ def __find_surface_thread(grid, field, value, zeta, const_depth=False,
 
     # Determine the upper and lower bounds of the value in the field
     tmp = np.ma.masked_equal(
-        np.diff(((field_a - value) < 0).astype(np.short), axis=0), 0)
-    factor = -np.sign(np.mean(np.diff(field, axis=0))).astype(np.short)
+        np.diff(((field_a - value) < 0).astype(np.intp), axis=0), 0)
+    factor = -np.sign(np.mean(np.diff(field, axis=0))).astype(np.intp)
 
     # Determine the points of the upper bound and the lower bound
     bad = np.sum(tmp, axis=0).astype(bool)
-    k_ones = np.arange(grid.n, dtype=np.short)
+    k_ones = np.arange(grid.n, dtype=np.intp)
     upper = (k_ones[:, np.newaxis, np.newaxis] ==
-             np.argmax(np.abs(tmp), axis=0)) * bad
-    k_ones = np.arange(grid.n, dtype=np.short) - factor
+             np.argmax(np.abs(tmp), axis=0) + 1) * bad
+    k_ones = np.arange(grid.n, dtype=np.intp) - factor
     lower = (k_ones[:, np.newaxis, np.newaxis] ==
-             np.argmax(np.abs(tmp), axis=0)) * bad
+             np.argmax(np.abs(tmp), axis=0) + 1) * bad
 
     # Now that we have the bounds, we can linearly interpolate to
     # find where the value lies
@@ -109,9 +109,9 @@ def constant_depth(field, grid, depth, zeta=None, threads=2):
         zeta = seapy.adddim(zeta, nt)
 
     v_grid = u_grid = False
-    if field.shape[-2:] == grid.mask_u:
+    if field.shape[-2:] == grid.mask_u.shape:
         u_grid = True
-    elif field.shape[-2:] == grid.mask_v:
+    elif field.shape[-2:] == grid.mask_v.shape:
         v_grid = True
 
     return np.ma.array(Parallel(n_jobs=threads, verbose=0)
@@ -161,9 +161,9 @@ def constant_value(field, grid, value, zeta=None, threads=2):
         zeta = seapy.adddim(zeta, nt)
 
     v_grid = u_grid = False
-    if field.shape[-2:] == grid.mask_u:
+    if field.shape[-2:] == grid.mask_u.shape:
         u_grid = True
-    elif field.shape[-2:] == grid.mask_v:
+    elif field.shape[-2:] == grid.mask_v.shape:
         v_grid = True
 
     return np.ma.array(Parallel(n_jobs=threads, verbose=0)
@@ -254,7 +254,7 @@ def gen_k_mask(N, kbot, ktop=None):
     if ktop is None:
         ktop = N
     ktop = np.asarray(ktop)
-    k_ones = np.arange(N, dtype=int)
+    k_ones = np.arange(N, dtype=intp)
     dbot, _ = np.modf(kbot)
     dtop, _ = np.modf(ktop)
     fld = np.logical_and(
@@ -266,9 +266,9 @@ def gen_k_mask(N, kbot, ktop=None):
     return fld - bfrac * dbot - tfrac * (1 - dtop)
 
 
-def depth_average(field, thickness, bottom, top=0, partial=False, average=True):
+def depth_sum(field, thickness, bottom, top=0, partial=False, average=False):
     """
-    Compute the depth-averaged field between the specified bottom and top
+    Compute the depth-integrated field between the specified bottom and top
     depths. Because a grid cell represents a volume, the thickness is used
     rather than depth. This provides the most accurate integration.
 
@@ -288,8 +288,8 @@ def depth_average(field, thickness, bottom, top=0, partial=False, average=True):
         full range of depths specified (i.e., bottom is 30, but the call
         was to integrate between 50 and 20m). Default is False.
     average: boolean, [optional]
-        If True [default], calculate the depth average. If False, calculate
-        the depth integral.
+        When False [default], depth integrate the field. If True, calculate
+        the depth average.
 
     Returns
     -------
@@ -312,9 +312,9 @@ def depth_average(field, thickness, bottom, top=0, partial=False, average=True):
 
     # Set up arrays for indexing
     surf = span.shape[0]
-    k_ones = np.arange(span.shape[0], dtype=int)
-    sl1 = np.arange(span.shape[1], dtype=int)[:, None]
-    sl2 = np.arange(span.shape[2], dtype=int)[None, :]
+    k_ones = np.arange(span.shape[0], dtype=intp)
+    sl1 = np.arange(span.shape[1], dtype=intp)[:, None]
+    sl2 = np.arange(span.shape[2], dtype=intp)[None, :]
 
     # Helper function to find fractional minimums
     def _find_fraction_layer0(f):
@@ -358,6 +358,37 @@ def depth_average(field, thickness, bottom, top=0, partial=False, average=True):
                                     np.sum(thickness * mask, axis=0), copy=False)
     else:
         return np.ma.masked_invalid(np.sum(field * mask * thickness, axis=idim))
+
+
+def depth_average(field, thickness, bottom, top=0, partial=False):
+    """
+    Compute the depth-averaged field between the specified bottom and top
+    depths. Because a grid cell represents a volume, the thickness is used
+    rather than depth. This provides the most accurate integration.
+
+    Parameters
+    ----------
+    field : ndarray,
+        ROMS 3-D field to integrate from a depth level. Must be
+        three-dimensional array (single time).
+    thickness : ndarray,
+        3-D array of the thickness of each grid cell in field
+    bottom : float,
+        Depth (in meters) to integrate from
+    top : float, [optional]
+        Depth (in meters) to integrate to defaults to surface
+    partial: boolean, [optional]
+        If True, produce results from grid locations that don't cover the
+        full range of depths specified (i.e., bottom is 30, but the call
+        was to integrate between 50 and 20m). Default is False.
+
+    Returns
+    -------
+    ndarray,
+        Values from depth integrated ROMS field
+    """
+    return depth_sum(field, thickness, bottom, top, partial, average=True)
+
 
 def transect(lon, lat, depth, data, nx=200, nz=40, z=None):
     """
